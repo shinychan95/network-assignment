@@ -17,7 +17,6 @@ int main(int argc, char *argv[])
     int sd;
     FILE *fp;
     char buf[BUF_SIZE];
-    char mode[BUF_SIZE];
     struct sockaddr_in serv_adr;
     
     if (argc != 3) {
@@ -32,7 +31,11 @@ int main(int argc, char *argv[])
     serv_adr.sin_addr.s_addr = inet_addr(argv[1]);
     serv_adr.sin_port = htons(atoi(argv[2]));
     
-    connect(sd, (struct sockaddr*)&serv_adr, sizeof(serv_adr));
+    if (connect(sd, (struct sockaddr*)&serv_adr, sizeof(serv_adr)) == -1)
+        error_handling("connect() error!");
+    else
+        puts("Connected...........");
+
     
     printf("=========== File List ===========\n");
     DIR *d;
@@ -49,7 +52,7 @@ int main(int argc, char *argv[])
     printf("=========== File List ===========\n\n");
 
     while(1) {
-        printf("Write file's name to be upload: ");
+        printf("Write file's name to be upload(exit to quit): ");
         char filename[BUF_SIZE];
         fgets(filename, BUF_SIZE, stdin);
         filename[strlen(filename)-1] = '\0';
@@ -58,18 +61,21 @@ int main(int argc, char *argv[])
         if (!strcmp(filename,"exit\n") || !strcmp(filename,"exit"))
             break;
 
+        // Open the file
+        fp = fopen(filename, "r");
+        if (fp == NULL) {
+            perror("Error in reading file");
+            continue;
+        }
+
+        // Send the file name
         printf("File name to be sended: %s\n", filename);
         if (send(sd, filename, sizeof(filename), 0) == -1) {
-            perror("[-]Error in sending filename.");
+            perror("send failed");
             exit(1);
         }
 
-        // Opend the file and send data to the server
-        fp = fopen(filename, "r");
-        if (fp == NULL) {
-            perror("[-]Error in reading file.");
-            exit(1);
-        }
+        // send data to the server
         send_file(fp, sd);
     }
 

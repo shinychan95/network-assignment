@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
 
     // Make socket for TCP connection.
     serv_sock = socket(PF_INET, SOCK_STREAM, 0);
+    
     memset(&serv_adr, 0, sizeof(serv_adr));
     serv_adr.sin_family = AF_INET;
     serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -48,10 +49,11 @@ int main(int argc, char *argv[]) {
 
     ///////////////////////////////////////////////////////////////////////////////
     // TODO: Initialize the fd_set reads to have zero bits for all file descriptors
+    FD_ZERO(&reads);
 
     // TODO: Add serv_sock into reads fd_set variable.
     // Question: Why do we need this?
-
+    FD_SET(serv_sock, &reads);
     ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -60,8 +62,7 @@ int main(int argc, char *argv[]) {
 
     while(1) {
         cpy_reads = reads;
-        timeout.tv_sec = 5;
-        timeout.tv_usec = 5000;
+        timeout.tv_sec = 15;
 
         // The return values of select()
         //            -1: Exception occurred
@@ -78,7 +79,7 @@ int main(int argc, char *argv[]) {
         }
 
         // Question: Why fd_max+1?
-        for (i = 0; i < fd_max+1; i++) {
+        for (i = 0; i < fd_max + 1; i++) {
             // Check whether i th fd had an event
             if (FD_ISSET(i, &cpy_reads)) {
 
@@ -88,14 +89,12 @@ int main(int argc, char *argv[]) {
                     adr_sz = sizeof(clnt_adr);
                     clnt_sock= accept(serv_sock, (struct sockaddr*)&clnt_adr, &adr_sz);
 
-
                     ////////////////////////////////////////////////////////////////////////
                     // TODO: Add clnt_sock to the proper fd_set variable
-
+                    FD_SET(clnt_sock, &reads);
                     // TODO: if clnt_sock is greater than fd_max, make fd_max as clnt_sock
-
+                    if (fd_max < clnt_sock) fd_max = clnt_sock;
                     ////////////////////////////////////////////////////////////////////////
-
 
                     printf("Connected Client: %d \n", clnt_sock);
                 }
@@ -109,9 +108,9 @@ int main(int argc, char *argv[]) {
 
                         ////////////////////////////////////////////////////////////////////////
                         // TODO: remove file descriptor i from fd_set
-
+                        FD_CLR(i, &reads);
                         // TODO: close the i th file descriptor
-
+                        close(i);
                         ////////////////////////////////////////////////////////////////////////
 
 
