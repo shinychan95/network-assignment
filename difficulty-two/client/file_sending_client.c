@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
         char filename[BUF_SIZE];
         fgets(filename, BUF_SIZE, stdin);
         filename[strlen(filename)-1] = '\0';
-
+        
         // If user's input was "exit", then get out this while loop.
         if (!strcmp(filename,"exit\n") || !strcmp(filename,"exit"))
             break;
